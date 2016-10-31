@@ -5,21 +5,24 @@ import {
 export class Api {
 
   static async requestLocationPermission() {
-    try {
-      const granted = await PermissionsAndroid.requestPermission(
-        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-        {
-          'title': 'KidsLists Location Permission',
-          'message': 'We need access to the location to give you customized recommendations.'
-        }
-      )
-      if (granted) {
-      } else {
-        console.log("Location permission denied")
-      }
-    } catch (err) {
-      console.warn(err)
-    }
+    return new Promise((resolve, reject) => {
+      resolve();
+    });
+    // try {
+    //   const granted = await PermissionsAndroid.requestPermission(
+    //     PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+    //     {
+    //       'title': 'KidsLists Location Permission',
+    //       'message': 'We need access to the location to give you customized recommendations.'
+    //     }
+    //   )
+    //   if (granted) {
+    //   } else {
+    //     console.log("Location permission denied")
+    //   }
+    // } catch (err) {
+    //   console.warn(err)
+    // }
   }
 
   static async getLocation() {
@@ -36,13 +39,13 @@ export class Api {
     return Api.requestLocationPermission()
       .then(Api.getLocation)
       .then((location) => {
-        return fetch('https://gist.githubusercontent.com/ggarber/105cad85b31b0d44239f0dfb01702620/raw/83b2920693d43a2432f94caec5318eba1b2c3b8d/kidslists');
+        return fetch('http://kidslists.herokuapp.com/api/v1');
       })
       .then((response) => {
         return response.json();
       })
       .then((data) => {
-        return data.events;
+        return data;
       });
   }
 }

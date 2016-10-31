@@ -18,11 +18,64 @@ import {
   TouchableOpacity,
   TouchableNativeFeedback
 } from 'react-native';
-import { Container, Header, Content, Title, Button, Icon } from 'native-base';
+import { Container, Header, Content, Title, Button } from 'native-base';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import { Api } from './api';
 
-class FullEventView extends Component {
+class EventView extends Component {
+  state = {
+    liked: false,
+  }
+
+  dayOfWeekToString(days) {
+    const weekday = [ "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado" ];
+    if (days.length == 1) {
+      return weekday[days[0]];
+    }
+    if (days.length == 2) {
+      return weekday[days[0]] + ', ' + weekday[days[1]];
+    }
+    else return "Varios días";
+  }
+
+  dayOfWeek() {
+    const weekday = [ "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" ];
+    const event = this.props.event;
+    if (event.datetime) {
+      return this.dayOfWeekToString([new Date(event.datetime).getDay()]);
+    }
+    return event.shows[0].weekdays;
+  }
+  render() {
+    const Touchable = (Platform.OS === 'ios' ? TouchableOpacity : TouchableNativeFeedback);
+
+    return (
+      <Touchable onPress={() => this.props.navigator.push({ id: 'event', event: this.props.event })}>
+      <View>
+        <Image style={styles.image} source={{ uri: this.props.event.image }}>
+          <Button transparent style={styles.button} onPress={() => this.setState({ liked: !this.state.liked })}>
+            <Icon style={styles.favorite} name={ this.state.liked ? 'favorite' : 'favorite-border' } />
+          </Button>
+
+          <View style={styles.date}>
+            <Text style={styles.dateText}>{this.dayOfWeek()}</Text>
+          </View>
+          <View style={styles.age}>
+            <Text style={styles.ageText}>Edades{"\n"}{this.props.event.age_min}-{this.props.event.age_max}</Text>
+          </View>
+        </Image>
+        <View style={styles.eventFooter}>
+          <Text style={styles.eventFooterText}>{this.props.event.title}</Text>
+          <Text>See more</Text>
+        </View>
+      </View>
+      </Touchable>
+    )
+  }
+}
+
+class FullEventView extends EventView {
   state = {
   }
 
@@ -32,69 +85,39 @@ class FullEventView extends Component {
     return (
       <View style={styles.fullEvent}>
         <Image style={styles.image} source={{ uri: this.props.event.image }}>
-          <Button transparent style={styles.button} >
-            <Icon name={ this.state.liked ? 'material|favorite' : 'material|favorite-outline' } />
+          <Button transparent style={styles.button} onPress={() => this.setState({ liked: !this.state.liked })}>
+            <Icon name={ this.state.liked ? 'favorite' : 'favorite-border' } />
           </Button>
 
           <View style={styles.date}>
-            <Text style={styles.dateText}>Saturday</Text>
+            <Text style={styles.dateText}>{this.dayOfWeek()}</Text>
           </View>
           <View style={styles.age}>
-            <Text style={styles.ageText}>Edades{"\n"}2-7</Text>
+            <Text style={styles.ageText}>Edades{"\n"}{this.props.event.age_min}-{this.props.event.age_max}</Text>
           </View>
         </Image>
         <View style={styles.eventFooter}>
           <Text style={styles.eventFooterText}>{this.props.event.title}</Text>
         </View>
         <View style={ styles.details }>
-          <Text>Long Desc....
+          <Text>{this.props.event.description}
           </Text>
-          <Text>Url
+          <Text>{this.props.event.url}
           </Text>
           <Button transparent >
-            <Text>Location</Text>
+            <Icon name="pin"/>
+            <Text>{this.props.event.location_name}</Text>
           </Button>
           <Button>
+            <Icon name="share"/>
             <Text>Share with friends</Text>
           </Button>
           <Button>
+            <Icon name="calendar"/>
             <Text>Add to calendar</Text>
           </Button>
         </View>
       </View>
-    )
-  }
-}
-
-class EventView extends Component {
-  state = {
-    liked: false,
-  }
-
-  render() {
-    const Touchable = (Platform.OS === 'ios' ? TouchableOpacity : TouchableNativeFeedback);
-
-    return (
-      <Touchable onPress={() => this.props.navigator.push({ id: 'event', event: this.props.event })}>
-      <View>
-        <Image style={styles.image} source={{ uri: this.props.event.image }}>
-          <Button transparent style={styles.button} >
-            <Icon name={ this.state.liked ? 'material|favorite' : 'material|favorite-outline' } />
-          </Button>
-
-          <View style={styles.date}>
-            <Text style={styles.dateText}>Saturday</Text>
-          </View>
-          <View style={styles.age}>
-            <Text style={styles.ageText}>Edades{"\n"}2-7</Text>
-          </View>
-        </Image>
-        <View style={styles.eventFooter}>
-          <Text style={styles.eventFooterText}>{this.props.event.title}</Text>
-          <Text>See more</Text>
-        </View>
-      </View>
-      </Touchable>
     )
   }
 }
@@ -112,7 +135,7 @@ class HomeView extends Component {
 
   render() {
     let list = this.state.events.map(
-      (event) => (<EventView navigator={this.props.navigator} key={event.id} event={event}></EventView>)
+      (event) => (<EventView navigator={this.props.navigator} key={event._id} event={event}></EventView>)
      );
     return (
       <ScrollView style={styles.home}>
@@ -146,12 +169,12 @@ class kidslists extends Component {
          LeftButton: (route, navigator, index, navState) =>
           { return (
           <Button transparent onPress={() => {
-            if (route.id !== 'home') { console.warn('a'); navigator.pop(); }
+            if (route.id !== 'home') { navigator.pop(); }
             else navigator.push({ id: 'settings' });
           }}><Text style={styles.textBar}>{route.event ? 'Back' : 'Filter' }</Text></Button>);
           },
          RightButton: (route, navigator, index, navState) =>
-           { return (route.id == 'home' ? <Button transparent onPress={() => { }}><Text style={styles.textBar}>Favs</Text></Button> : <View/>); },
+           { return (route.id == 'home' ? <Button transparent onPress={() => { }}><Icon style={styles.favorite} name='favorite' /></Button> : <View/>); },
          Title: (route, navigator, index, navState) =>
            { return (<Text style={styles.textBar}>{route.event ? route.event.title : 'Home' }</Text>); },
        }}
@@ -197,6 +220,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   details: {
+    padding: 10,
   },
   events: {
     color: 'blue',
@@ -206,8 +230,8 @@ const styles = StyleSheet.create({
   },
   button: {
     position: 'absolute',
-    right: 10,
-    top: 10,
+    right: 6,
+    top: 6,
   },
   date: {
     position: 'absolute',
@@ -243,6 +267,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginVertical: 8,
   },
+  favorite: {
+    color: 'red',
+    fontSize: 18,
+  }
 });
 
 AppRegistry.registerComponent('kidslists', () => kidslists);
